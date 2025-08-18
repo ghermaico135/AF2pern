@@ -1,18 +1,41 @@
-import express from 'express';
+import express,{json,urlencoded} from 'express';
 import bodyParser from 'body-parser';
 import cors from "cors"
+import dotenv from  "dotenv"
+import session from 'express-session';
+import passport from 'passport';
 // import { db } from './utils/connectToDB.js';
+
+dotenv.config();
 
 const app = express()
 const PORT = process.env.PORT || 5000
 
 const corsOption={
-    origin:"*"
+    // origin:"*"
+     origin:["http://localhost:3001"],
+    Credential:true
 }
 
 app.use(cors(corsOption))
 app.use(bodyParser.json()); 
+app.use(json({limit:"100mb"}))
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(urlencoded({limit:"100mb",extended: true}))
+app.use(passport.initialize())
+app.use(passport.session())
+
+app.use(session({
+    secret:process.env.SESSION_SECRET || "secret",
+    resave:false,
+    saveUninitialized:false,
+    cookie:{
+        secure:false,
+        maxAge:60000 * 60,
+    }
+}))
+
+
 
 app.use((req,res)=>{
     req.statusCode(404).json({error:"Page isn't found"})
