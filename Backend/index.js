@@ -4,6 +4,7 @@ import cors from "cors"
 import dotenv from  "dotenv"
 import session from 'express-session';
 import passport from 'passport';
+import routes from './routes/authRoute.js';
 // import { db } from './utils/connectToDB.js';
 
 dotenv.config();
@@ -17,13 +18,13 @@ const corsOption={
     Credential:true
 }
 
+app.use(express.json())
 app.use(cors(corsOption))
 app.use(bodyParser.json()); 
 app.use(json({limit:"100mb"}))
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(urlencoded({limit:"100mb",extended: true}))
-app.use(passport.initialize())
-app.use(passport.session())
+
 
 app.use(session({
     secret:process.env.SESSION_SECRET || "secret",
@@ -35,6 +36,12 @@ app.use(session({
     }
 }))
 
+app.use(passport.initialize())
+app.use(passport.session())
+
+app.use("/api/auth" ,routes)
+
+
 
 
 app.use((req,res)=>{
@@ -44,19 +51,9 @@ app.use((req,res)=>{
 app.use((err,req,res,next)=>{
     const statusCode = err.statusCode || 500
     const message = err.message || "Internal server error"
-    return res.statusCode(statusCode).json({error:message})
+    return res.status(statusCode).json({error:message})
 })
 
-// db.connect().then(()=>{
-//     console.log("connected with database")
-// }).catch((err)=>{
-//     console.log("couldn't connect with database" ,err)
-// })
-
-// db.on("error" ,err =>{
-//     console.log("database error",err)
-//     process.exit(1)
-// })
 
 app.listen( PORT, ()=>{
     console.log(`Server listens at port ${PORT}`)
