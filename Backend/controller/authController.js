@@ -1,5 +1,5 @@
-import { createErrors } from "../utils/error.js"
-import {query} from "../utils/connectToDB.js"
+import { createErrors } from "../config/error.js"
+import {query} from "../config/connectToDB.js"
 import { createTableUser,getAllUsersQuery,createUserQuery} from "../model/sqlUser.js";
 import bcrypt from "bcryptjs"
 
@@ -40,18 +40,12 @@ export const register = async(req,res,next) =>{
 }
 
 export const login = async(req,res,next) =>{
-    try{
-        const {username, password} = req.body
-        if(!username || !password){
-             return res.status(400).json({error:"Missing field"})
-        }
-       
-
-    }catch(error){
-         console.error(error)
-        next(createErrors(500,"Internal error"))
-    }
-
+        console.log("The authentiated user is", req.user)
+        res.status(200).json({
+            message:"user logged in successfully",
+            username:req.user.username,
+           isMfactive : req.user.isMfactive
+        })
 }
 export const authStatus = async(req,res,next) =>{
 

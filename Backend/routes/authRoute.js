@@ -1,5 +1,6 @@
 import Router from "express";
 import {getAllUsers, register,login,logout,authStatus,setup2FA,verify2FA,reset2FA } from "../controller/authController.js";
+import passport from "../config/passportConfig.js"
 
 const router = Router();
 
@@ -7,7 +8,7 @@ router.get("/", getAllUsers)
 
 router.post("/register", register)
 
-router.post("/login",  login)
+router.post("/login", passport.authenticate('local', { failureRedirect: '/login' }), login)
 
 router.get("/status",  authStatus)
 

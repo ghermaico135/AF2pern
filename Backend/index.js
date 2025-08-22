@@ -5,7 +5,8 @@ import dotenv from  "dotenv"
 import session from 'express-session';
 import passport from 'passport';
 import routes from './routes/authRoute.js';
-// import { db } from './utils/connectToDB.js';
+import "./config/passportConfig.js"
+
 
 dotenv.config();
 
@@ -49,7 +50,7 @@ app.use((req,res)=>{
 })
 
 app.use((err,req,res,next)=>{
-    const statusCode = err.statusCode || 500
+    const statusCode = err.status || 500
     const message = err.message || "Internal server error"
     return res.status(statusCode).json({error:message})
 })
