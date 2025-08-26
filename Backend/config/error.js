@@ -4,3 +4,4 @@ export const createErrors = (statusCode,message)=>{
     error.status = statusCode
     return error
 }
+

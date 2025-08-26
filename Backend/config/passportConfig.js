@@ -10,18 +10,32 @@ import { loginUserQuery,getSepecificUserQuery} from "../model/sqlUser.js";
  passport.use(
     new LocalStrategy(async (username, password, done) => {
         try{
-            const result = await query(loginUserQuery,[username]).rows[0]
+            const result = await query(loginUserQuery,[username])
             const user = result.rows[0];
-            console.log("user retrived from" ,user)
-            if(!user) return done(null,false,{message:"User not found"})
+            console.log("Username:", result);
+
+            // Ensure result is an array
+            if (!user) {
+                return done(null, false, {message: "User not found"});
+            }
+
             
+            console.log("User retrieved:", user);
+            console.log("User from DB:", user);
+            console.log("DB password field:", user ? user.password : "undefined");
+
+            if(!user.password){
+                return done(null,false,{message:"User doesn't have a password set"})            
+            }
+
             const isMatch = await bcrypt.compare(password,user.password)
 
-            if(isMatch) return done (null,user)
-            else return done(null,false,{message:"Incorrect password"})
+            if(isMatch) {
+                return done (null,user)
+            }else return done(null,false,{message:"Incorrect password"})
 
         }catch(err){
-            console.error(err)
+            console.error("Passport error",err)
             done(createErrors(500,"Internal server error"))
         }
     }

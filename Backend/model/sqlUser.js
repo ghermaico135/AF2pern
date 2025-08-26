@@ -27,7 +27,7 @@ export const createUserQuery = `
     INSERT INTO users(username,password) VALUES ($1,$2) RETURNING *;
 `
 export const loginUserQuery = `
-    SELECT * FROM users WHERE username=$1
+    SELECT * FROM users WHERE username=$1 
 `;
 
 export const getSepecificUserQuery = `
