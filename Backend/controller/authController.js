@@ -48,10 +48,24 @@ export const login = async(req,res,next) =>{
         })
 }
 export const authStatus = async(req,res,next) =>{
-
+        if(req.user){
+            res.status(200).json({
+                message:"User logged in success",
+                username:req.user.username,
+                isMfactive:req.user.isMfactive
+            })
+        }else{
+            res.status(401).json({message:"Unauthorized user"})
+        }
 }
 export const logout = async(req,res,next) =>{
-
+        if(!req.user) return  res.status(401).json({message:"Unauthorized user"})
+        req.logout((err) =>{
+                if(err) {return res.status(400).json({message:"user not logged out"})
+                }else{
+                    return res.status(200).json({message:"user successfully logged out"})
+                }
+            })
 }
 export const setup2FA = async(req,res,next) =>{
 
