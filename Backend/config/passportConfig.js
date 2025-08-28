@@ -20,9 +20,9 @@ import { loginUserQuery,getSepecificUserQuery} from "../model/sqlUser.js";
             }
 
             
-            console.log("User retrieved:", user);
-            console.log("User from DB:", user);
-            console.log("DB password field:", user ? user.password : "undefined");
+            // console.log("User retrieved:", user);
+            // console.log("User from DB:", user);
+            // console.log("DB password field:", user ? user.password : "undefined");
 
             if(!user.password){
                 return done(null,false,{message:"User doesn't have a password set"})            

@@ -4,6 +4,12 @@ import passport from "../config/passportConfig.js"
 
 const router = Router();
 
+const isAuth = (req, res, next) => {
+  if (req.isAuthenticated()) return next();
+  return res.status(401).json({ message: "Unauthorized" });
+};
+
+
 router.get("/", getAllUsers)
 
 router.post("/register", register)
@@ -14,10 +20,11 @@ router.get("/status",  authStatus)
 
 router.post("/logout",  logout)
 
-router.post("/2fa/setup",  setup2FA)
+//adding authentication middle ware
+router.post("/2fa/setup",isAuth, setup2FA)
 
-router.post("/2fa/verify", verify2FA )
+router.post("/2fa/verify",isAuth, verify2FA )
 
-router.post("/2fa/reset", reset2FA )
+router.post("/2fa/reset",isAuth, reset2FA )
 
 export  default router;

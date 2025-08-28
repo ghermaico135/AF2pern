@@ -1,7 +1,12 @@
+import bcrypt from "bcryptjs"
+import speakeasy from "speakeasy"
+import qrcode from "qrcode"
+import jwt from "jsonwebtoken"
+
 import { createErrors } from "../config/error.js"
 import {query} from "../config/connectToDB.js"
-import { createTableUser,getAllUsersQuery,createUserQuery} from "../model/sqlUser.js";
-import bcrypt from "bcryptjs"
+import { createTableUser,getAllUsersQuery,createUserQuery,updateQuery} from "../model/sqlUser.js";
+
 
 export const getAllUsers = async(req,res,next) =>{
     try{
@@ -68,7 +73,28 @@ export const logout = async(req,res,next) =>{
             })
 }
 export const setup2FA = async(req,res,next) =>{
+    try{
+        const user = req.user    //passport.js
+        const secret = speakeasy.generateSecret();
+         console.log("The secret object is: ",secret)
+        user.twoFactor_temp_secret = secret.base32;
+        const values =[ user.twoFactor_temp_secret,true,user.id];
+        const result = await query(updateQuery,values)
+        const url = speakeasy.otpauthURL({
+            secret:secret.base32,
+            label:`${req.user.username}`,
+            issuer:"www.miki.com",
+            encoding:"base32"
 
+        })
+
+        const qrImageUrl = await qrcode.toDataURL(url)
+        return res.status(200).json({secret:secret.base32,qrcode:qrImageUrl})
+    }catch(error){
+         console.error(error)
+        next(createErrors(500,"error setting up 2FA"))
+    }
+       
 }
 export const verify2FA = async(req,res,next) =>{
 
