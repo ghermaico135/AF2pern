@@ -34,4 +34,8 @@ export const getSepecificUserQuery = `
     SELECT * FROM users WHERE id=$1
 `;
 
-export const updateQuery =` UPDATE users SET twoFactorSecret = $1, isMfactive =$2 WHERE id=$3 RETURNING * `; 
+export const updateQuery =` UPDATE users SET twoFactorSecret = $1,  WHERE id=$2 RETURNING * `;
+
+export const getTwoFactorSecret = `SELECT twoFactorSecret FROM users WHERE id= $1 RETURNING * `;
+
+export const updateVerifiedQuery =` UPDATE users SET twoFactorSecret = $1,  isMfactive=true,twoFactor_temp_secret =NULL  WHERE id=$2 RETURNING * `;

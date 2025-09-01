@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken"
 
 import { createErrors } from "../config/error.js"
 import {query} from "../config/connectToDB.js"
-import { createTableUser,getAllUsersQuery,createUserQuery,updateQuery} from "../model/sqlUser.js";
+import { createTableUser,getAllUsersQuery,createUserQuery,updateQuery,updateVerifiedQuery} from "../model/sqlUser.js";
 
 
 export const getAllUsers = async(req,res,next) =>{
@@ -77,9 +77,10 @@ export const setup2FA = async(req,res,next) =>{
         const user = req.user    //passport.js
         const secret = speakeasy.generateSecret();
          console.log("The secret object is: ",secret)
-        user.twoFactor_temp_secret = secret.base32;
-        const values =[ user.twoFactor_temp_secret,true,user.id];
-        const result = await query(updateQuery,values)
+
+        user.twoFactorSecret = secret.base32;
+        const values =[ user.twoFactorSecret,user.id];
+        await query(updateQuery,values)
         const url = speakeasy.otpauthURL({
             secret:secret.base32,
             label:`${req.user.username}`,
@@ -97,6 +98,25 @@ export const setup2FA = async(req,res,next) =>{
        
 }
 export const verify2FA = async(req,res,next) =>{
+    const {token} = req.body;
+    const user = req.user
+    
+    const result = await query(getTwoFactorSecret,[user.id])
+    const tempSecret = result.rows[0]?.twoFactorSecret;
+
+    if(!tempSecret) return res.status(400).json({messge:" No 2fa setup found"});
+
+    const verified = speakeasy.totp.verify({
+          secret:tempSecret,
+            encoding:"base32",
+            token,
+            window:1
+    })
+
+    if(!verified) return   res.status(400).json({messge:" Invalid token"})
+
+    await query(updateVerifiedQuery,[tempSecret,user.id])
+    res.status(400).json({messge:" 2FA successfully enabled"});
 
 }
 export const reset2FA  = async(req,res,next) =>{
