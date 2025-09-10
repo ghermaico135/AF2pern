@@ -4,8 +4,10 @@ import cors from "cors"
 import dotenv from  "dotenv"
 import session from 'express-session';
 import passport from 'passport';
-import routes from './routes/authRoute.js';
+import routes from "./routes/authRoute.js"
 import "./config/passportConfig.js"
+
+
 
 
 dotenv.config();
@@ -45,6 +47,7 @@ app.use("/api/auth" ,routes)
 
 
 
+
 app.use((req,res)=>{
     req.statusCode(404).json({error:"Page isn't found"})
 })
@@ -55,6 +58,18 @@ app.use((err,req,res,next)=>{
     return res.status(statusCode).json({error:message})
 })
 
+
+
+// db.connect().then(()=>{
+//     console.log("connected with database")
+// }).catch((err)=>{
+//     console.log("couldn't connect with database" ,err)
+// })
+
+// db.on("error" ,err =>{
+//     console.log("database error",err)
+//     process.exit(1)
+// })
 
 app.listen( PORT, ()=>{
     console.log(`Server listens at port ${PORT}`)

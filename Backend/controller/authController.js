@@ -2,10 +2,10 @@ import bcrypt from "bcryptjs"
 import speakeasy from "speakeasy"
 import qrcode from "qrcode"
 import jwt from "jsonwebtoken"
-
 import { createErrors } from "../config/error.js"
 import {query} from "../config/connectToDB.js"
-import { createTableUser,getAllUsersQuery,createUserQuery,updateQuery,updateVerifiedQuery} from "../model/sqlUser.js";
+import { createTableUser,getAllUsersQuery,createUserQuery,updateQuery,getTempFactorSecret,
+    updateVerifiedQuery,updateVerifyResetQuery} from "../model/sqlUser.js";
 
 
 export const getAllUsers = async(req,res,next) =>{
@@ -17,7 +17,7 @@ export const getAllUsers = async(req,res,next) =>{
 
         const {rows} = await query(getAllUsersQuery)
         console.log(rows)
-        res.status(200).json({message:"The table creates successfully",rows:rows})
+       return  res.status(200).json({message:"The table creates successfully",rows:rows})
 
     }catch(error){
           console.error(error)
@@ -49,7 +49,7 @@ export const login = async(req,res,next) =>{
         res.status(200).json({
             message:"user logged in successfully",
             username:req.user.username,
-           isMfactive : req.user.isMfactive
+           is_mf_active : req.user.is_mf_active
         })
 }
 export const authStatus = async(req,res,next) =>{
@@ -57,7 +57,7 @@ export const authStatus = async(req,res,next) =>{
             res.status(200).json({
                 message:"User logged in success",
                 username:req.user.username,
-                isMfactive:req.user.isMfactive
+               is_mf_active:req.user.is_mf_active
             })
         }else{
             res.status(401).json({message:"Unauthorized user"})
@@ -78,9 +78,11 @@ export const setup2FA = async(req,res,next) =>{
         const secret = speakeasy.generateSecret();
          console.log("The secret object is: ",secret)
 
-        user.twoFactorSecret = secret.base32;
-        const values =[ user.twoFactorSecret,user.id];
+        user.two_factor_secret = secret.base32;
+        const values =[ user.two_factor_secret, user.id];
+
         await query(updateQuery,values)
+
         const url = speakeasy.otpauthURL({
             secret:secret.base32,
             label:`${req.user.username}`,
@@ -90,7 +92,12 @@ export const setup2FA = async(req,res,next) =>{
         })
 
         const qrImageUrl = await qrcode.toDataURL(url)
-        return res.status(200).json({secret:secret.base32,qrcode:qrImageUrl})
+
+        return res.status(200).json({
+            secret:secret.base32,
+            qrcode:qrImageUrl,
+            is_mf_active:true,
+        })
     }catch(error){
          console.error(error)
         next(createErrors(500,"error setting up 2FA"))
@@ -98,27 +105,54 @@ export const setup2FA = async(req,res,next) =>{
        
 }
 export const verify2FA = async(req,res,next) =>{
-    const {token} = req.body;
-    const user = req.user
-    
-    const result = await query(getTwoFactorSecret,[user.id])
-    const tempSecret = result.rows[0]?.twoFactorSecret;
+    try{
+         const {token} = req.body;
+         console.log(token)
+        const user = req.user
+// get the temporay secret from DB  
+    const result = await query(getTempFactorSecret,[user.id])
+    const tempSecret = result.rows[0]?.two_factor_temp_secret;
 
-    if(!tempSecret) return res.status(400).json({messge:" No 2fa setup found"});
-
-    const verified = speakeasy.totp.verify({
+     if(!tempSecret){
+         return res.status(400).json({messge:" No 2fa setup found"});
+    } 
+        const verified = speakeasy.totp.verify({
           secret:tempSecret,
             encoding:"base32",
             token,
             window:1
     })
 
-    if(!verified) return   res.status(400).json({messge:" Invalid token"})
+        if(!verified){
+             return  res.status(400).json({messge:"Invalid or expired token"}) 
+         }
+            // 3. If verified, update DB (move temp → permanent)
+            await query(updateVerifiedQuery,[tempSecret,user.id])
 
-    await query(updateVerifiedQuery,[tempSecret,user.id])
-    res.status(400).json({messge:" 2FA successfully enabled"});
-
+            // 4. Generate JWT for login session
+            const jwtToken = jwt.sign({
+                username: user.username},
+                process.env.JWT_SECRET,
+                {expiresIn:"1h"}
+            )
+        return  res.status(200).json({messge:"2fa successful", token:jwtToken})
+    
+    }catch(error){
+         console.error(error)
+        next(createErrors(500,"error setting up 2FA"))
+    }
+   
 }
 export const reset2FA  = async(req,res,next) =>{
+    try{
+        const user = req.user;
+        await query(updateVerifyResetQuery,[user.id]);
+         return res.status(200).json({message:"2FA reset successful"})
+
+    }catch(error){
+        console.error(error)
+        next(createErrors(500,"error setting up 2FA"))
+
+    }
 
 }
