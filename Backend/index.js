@@ -5,6 +5,7 @@ import dotenv from  "dotenv"
 import session from 'express-session';
 import passport from 'passport';
 import routes from "./routes/authRoute.js"
+import empRoutes from "./routes/employeeRoute.js"
 import "./config/passportConfig.js"
 
 
@@ -43,6 +44,7 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 app.use("/api/auth" ,routes)
+app.use("/api" ,empRoutes)
 
 
 
